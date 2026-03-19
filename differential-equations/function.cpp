@@ -31,16 +31,6 @@ function::function(std::function<double(double)> evaluator){
 
 function::Derivative::Derivative(function &f) : parent(f){}
 
-function::Trigonometry::Trigonometry(function &f) : parent(f) {}
-
-function::Trigonometry::Sin::Sin() {}
-
-function::Trigonometry::Cos::Cos() {}
-
-function::Trigonometry::Tan::Tan(Trigonometry &t) : t_parent(t) {}
-
-function::Trigonometry::Cot::Cot(Trigonometry &t) : t_parent(t) {}
-
 double function::f(double x){
     this->value = 0;
     
@@ -65,7 +55,7 @@ double function::Derivative::operator()(double x){
     return (parent(x+h) - parent(x-h)) / (2.0 * h);
 }
 
-double function::Trigonometry::Sin::operator()(double x){
+double function::Trigonometry::sin(double x){
     const int n = 16;
     double result = 0;
     
@@ -86,8 +76,8 @@ double function::Trigonometry::Sin::operator()(double x){
     return result;
 }
 
-double function::Trigonometry::Cos::operator()(double x){
-    const int n = 3;
+double function::Trigonometry::cos(double x){
+    const int n = 16;
     double result = 0;
     
     x = fmod(x, 360);
@@ -108,9 +98,9 @@ double function::Trigonometry::Cos::operator()(double x){
     return result;
 }
 
-double function::Trigonometry::Tan::operator()(double x){
-    double sin = t_parent.sin(x);
-    double cos = t_parent.cos(x);
+double function::Trigonometry::tan(double x){
+    double sin = function::Trigonometry::sin(x);
+    double cos = function::Trigonometry::cos(x);
     
     if(std::abs(cos) < 1e-16){
         return INFINITY;
@@ -119,10 +109,9 @@ double function::Trigonometry::Tan::operator()(double x){
     return sin/cos;
 }
 
-double function::Trigonometry::Cot::operator()(double x){
-    
-    double sin = t_parent.sin(x);
-    double cos = t_parent.cos(x);
+double function::Trigonometry::cot(double x){
+    double sin = function::Trigonometry::sin(x);
+    double cos = function::Trigonometry::cos(x);
     
     if(std::abs(sin) < 1e-16){
         return INFINITY;

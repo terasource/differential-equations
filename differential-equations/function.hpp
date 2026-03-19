@@ -35,40 +35,11 @@ public:
     
     class Trigonometry {
     public:
+        static double sin(double x);
+        static double cos(double x);
+        static double tan(double x);
+        static double cot(double x);
         
-        class Sin{
-        public:
-            Sin();
-            double operator()(double x);
-        };
-        
-        class Cos{
-        public:
-            Cos();
-            double operator()(double x);
-        };
-        
-        class Tan{
-        public:
-            Tan(Trigonometry &t);
-            double operator()(double x);
-        private:
-            Trigonometry& t_parent;
-        };
-        
-        class Cot{
-        public:
-            Cot(Trigonometry &t);
-            double operator()(double x);
-        private:
-            Trigonometry& t_parent;
-        };
-
-        Trigonometry(function &f);
-        function& parent;
-        Sin sin;
-        Cos cos;
-        double operator()(double x);
     };
     
 };
