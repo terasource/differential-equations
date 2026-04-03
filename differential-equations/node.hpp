@@ -13,6 +13,7 @@ class Node{
     virtual double evaluate(double x) const = 0;
     virtual Node* derivative() const = 0;
     virtual Node* clone() const = 0;
+    virtual Node* simplifier() const {return clone();};
     
     virtual void print() const = 0;
 };
@@ -41,11 +42,11 @@ private:
 public:
     ~Sum();
     Sum(Node* l, Node* r);
-    // (Q1) what is the reason for x to stand here as a parameter of double variable in evaluate function? like summition does not need it to be so. (answered)!
     
     double evaluate(double x) const override;
     Node* derivative() const override;
     Node* clone() const override;
+    Node* simplifier() const override;
     void print() const override;
 };
 
@@ -59,6 +60,7 @@ public:
     double evaluate(double x) const override;
     Node* derivative() const override;
     Node* clone() const override;
+    Node* simplifier() const override;
     void print() const override;
 };
 
@@ -72,6 +74,7 @@ class Multiply : public Node{
     double evaluate(double x) const override;
     Node* derivative() const override;
     Node* clone() const override;
+    Node* simplifier() const override;
     void print() const override;
 };
 
@@ -85,6 +88,7 @@ class Divide : public Node{
     double evaluate(double x) const override;
     Node* derivative() const override;
     Node* clone() const override;
+    Node* simplifier() const override;
     void print() const override;
 };
 

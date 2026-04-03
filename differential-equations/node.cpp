@@ -38,13 +38,11 @@ Constant::Constant(double value) : value(value) {}
 double Constant::evaluate(double x) const { return value; }
 Node* Constant::derivative() const {return new Constant(0.0); }
 Node* Constant::clone() const {return new Constant(value);}
-
 void Constant::print() const {std::cout << value;}
 
 double Variable::evaluate(double x) const {return x; }
 Node* Variable::derivative() const {return new Constant(1.0); }
 Node* Variable::clone() const {return new Variable(); }
-
 void Variable::print() const {std::cout << "x";};
 
 Sum::Sum(Node* l, Node* r) : left(l), right(r) {}
@@ -55,6 +53,35 @@ double Sum::evaluate(double x) const { return left->evaluate(x) + right->evaluat
 Node* Sum::derivative() const {return new Sum(left->derivative(), right->derivative());}
 Node* Sum::clone() const {return new Sum(left->clone(), right->clone());}
 
+Node* Sum::simplifier() const {
+    //rules
+    //A+B = C
+    //A+0 = A
+    //0+A = A
+    
+    Node* sleft = left->simplifier();
+    Node* sright = right->simplifier();
+    
+    Constant* lconst = dynamic_cast<Constant*>(sleft);
+    Constant* rconst = dynamic_cast<Constant*>(sright);
+    
+    if(lconst && lconst->evaluate(0) == 0){
+        delete sleft;
+        return sright;
+    }
+    if(rconst && rconst->evaluate(0) == 0){
+        delete sright;
+        return sleft;
+    }
+    if(lconst && rconst){
+        double val = sleft->evaluate(1) + sright->evaluate(1);
+        delete sleft; delete sright;
+        return new Constant(val);
+    }
+
+    return new Sum(sleft, sright);
+}
+
 Subtract::Subtract(Node* l, Node* r) : left(l), right(r) {}
 
 double Subtract::evaluate(double x) const { return left->evaluate(x) - right->evaluate(x);}
@@ -62,6 +89,44 @@ double Subtract::evaluate(double x) const { return left->evaluate(x) - right->ev
 // get the operation of the substraction derivative? could not i?
 Node* Subtract::derivative() const {return new Subtract(left->derivative(), right->derivative());}
 Node* Subtract::clone() const {return new Subtract(left->clone(), right->clone());}
+
+Node* Subtract::simplifier() const {
+    //rules
+    //A-B = C
+    //A-0 = A
+    //0-A = -A
+    
+    Node* sleft = left->simplifier();
+    Node* sright = right->simplifier();
+    
+    Constant* lconst = dynamic_cast<Constant*>(sleft);
+    Constant* rconst = dynamic_cast<Constant*>(sright);
+    
+    if(lconst && lconst->evaluate(0) == 0){
+        delete sleft;
+        if(rconst){
+            double value =  -1 * sright->evaluate(0);
+            delete sright;
+            return new Constant(value);
+        }else
+            return new Multiply(new Constant(-1.0), sright);
+    }
+
+    if(rconst && rconst->evaluate(0) == 0){
+        delete sright;
+        return sleft;
+    }
+    
+    if(lconst && rconst){
+        double val = sleft->evaluate(0) -sright->evaluate(0);
+        
+        delete sleft; delete sright;
+        
+        return new Constant(val);
+    }
+
+    return new Subtract(sleft, sright);
+}
 
 void Subtract::print() const {std::cout << "("; left->print(); std::cout << " - "; right->print(); std::cout << ")";}
 
@@ -77,6 +142,43 @@ Node* Multiply::derivative() const {
 }
 Node* Multiply::clone() const {return new Multiply(left->clone(), right->clone());}
 
+Node* Multiply::simplifier() const {
+
+    Node* sleft = left->simplifier();
+    Node* sright = right->simplifier();
+    
+    Constant* lconst = dynamic_cast<Constant*>(sleft);
+    Constant* rconst = dynamic_cast<Constant*>(sright);
+    
+    if(lconst && lconst->evaluate(0) == 0){
+        delete sleft; delete sright;
+        return new Constant(0.0);
+    }
+    
+    if(rconst && rconst->evaluate(0) == 0){
+        delete sleft; delete sright;
+        return new Constant(0.0);
+    }
+    
+    if(lconst && lconst->evaluate(0) == 1){
+        delete sleft;
+        return sright;
+    }
+    if(rconst && rconst->evaluate(0) == 1){
+        delete sright;
+        return sleft;
+    }
+    
+    
+    if(lconst != nullptr && rconst != nullptr){
+        double val = lconst->evaluate(0) * rconst->evaluate(0);
+        delete sleft; delete sright;
+        return new Constant(val);
+    }
+        
+    
+    return new Multiply(sleft, sright);
+}
 void Multiply::print() const {std::cout << "("; left->print(); std::cout << " * "; right->print(); std::cout << ")"; }
 
 Divide::Divide(Node* l, Node *r) : left(l), right(r) {}
@@ -91,6 +193,46 @@ Node* Divide::derivative() const {
                       );
 }
 Node* Divide::clone() const {return new Divide(left->clone(), right->clone()); }
+Node* Divide::simplifier() const {
+    //rules
+    // A/1 = A;
+    // 1/A = 1/A;
+    // A/0 = undefined;
+    // 0/A = 0;
+    // A/B = C;
+    
+    Node* sleft = left->simplifier();
+    Node* sright = right->simplifier();
+    
+    Constant* lconst = dynamic_cast<Constant*>(sleft);
+    Constant* rconst = dynamic_cast<Constant*>(sright);
+    
+    if(rconst && rconst->evaluate(0) == 1){
+        delete sright;
+        return sleft;
+    }
+    if(lconst && lconst->evaluate(0) == 1){
+        return new Divide(sleft,sright);
+    }
+    if(lconst && lconst->evaluate(0) == 0){
+        delete sleft; delete sright;
+        return new Constant(0);
+    }
+    if(rconst && rconst->evaluate(0) == 0){
+        delete sright;
+        delete sleft;
+        throw std::runtime_error("Divison by zero! ");
+    }
+    if(lconst && rconst){
+        double lval = sleft->evaluate(0);
+        double rval = sright->evaluate(0);
+        double val = lval / rval;
+        delete sleft; delete sright;
+        return new Constant(val);
+    }
+    
+    return new Divide(sleft, sright);
+}
 
 void Divide::print() const {std::cout << "("; left->print(); std::cout << " / "; right->print(); std::cout << ")"; }
 
@@ -103,7 +245,6 @@ double SinNode::evaluate(double x) const {
 Node* SinNode::derivative() const {return new Multiply(child->derivative(), new CosNode(child->clone()));}
 
 Node* SinNode::clone() const {return new SinNode(child->clone());}
-
 void SinNode::print() const {std::cout << "sin("; child->print(); std::cout << ")";}
 
 CosNode::CosNode(Node* c) : child(c) {}
@@ -133,7 +274,6 @@ Node* TanNode::derivative() const {
 }
 
 Node* TanNode::clone() const {return new TanNode(child->clone());}
-
 void TanNode::print() const {std::cout << "tan("; child->print(); std::cout << ")";}
 
 CotNode::CotNode(Node* c) : child(c){}
