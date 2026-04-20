@@ -4,16 +4,19 @@
 //
 //  Created by Alp on 9.03.2026.
 //
-
+#pragma once
 #include "function.hpp"
+class Node;
+
+using smartNode = std::shared_ptr<Node>;
 
 class Node{
  public:
     virtual ~Node();
     virtual double evaluate(double x) const = 0;
-    virtual Node* derivative() const = 0;
-    virtual Node* clone() const = 0;
-    virtual Node* simplifier() const {return clone();};
+    virtual smartNode derivative() const = 0;
+    virtual smartNode clone() const = 0;
+    virtual smartNode simplifier() const {return clone();};
     
     virtual void print() const = 0;
 };
@@ -23,120 +26,126 @@ class Constant : public Node {
  public:
     Constant(double value);
     double evaluate(double x) const override;
-    Node* derivative()const override;
-    Node* clone() const override;
+    smartNode derivative()const override;
+    smartNode clone() const override;
     void print() const override;
 };
 
 class Variable : public Node{
  public:
     double evaluate(double x) const override;
-    Node* derivative()const override;
-    Node* clone() const override;
+    smartNode derivative()const override;
+    smartNode clone() const override;
     void print() const override;
 };
 class Sum : public Node{
 private:
-    Node* left;
-    Node* right;
+    smartNode left;
+    smartNode right;
 public:
     ~Sum();
-    Sum(Node* l, Node* r);
+    Sum(smartNode l, smartNode r);
     
     double evaluate(double x) const override;
-    Node* derivative() const override;
-    Node* clone() const override;
-    Node* simplifier() const override;
+    smartNode derivative() const override;
+    smartNode clone() const override;
+    smartNode simplifier() const override;
     void print() const override;
+    
 };
 
 class Subtract : public Node{
 private:
-    Node* left;
-    Node* right;
+    smartNode left;
+    smartNode right;
 public:
     ~Subtract();
-    Subtract(Node* l, Node* r);
+    Subtract(smartNode l, smartNode r);
     double evaluate(double x) const override;
-    Node* derivative() const override;
-    Node* clone() const override;
-    Node* simplifier() const override;
+    smartNode derivative() const override;
+    smartNode clone() const override;
+    smartNode simplifier() const override;
     void print() const override;
 };
 
 class Multiply : public Node{
  private:
-    Node* left;
-    Node* right;
+    smartNode left;
+    smartNode right;
  public:
     ~Multiply();
-    Multiply(Node* l, Node* r);
+    Multiply(smartNode l, smartNode r);
     double evaluate(double x) const override;
-    Node* derivative() const override;
-    Node* clone() const override;
-    Node* simplifier() const override;
+    smartNode derivative() const override;
+    smartNode clone() const override;
+    smartNode simplifier() const override;
     void print() const override;
 };
 
 class Divide : public Node{
  private:
-    Node* left;
-    Node* right;
+    smartNode left;
+    smartNode right;
  public:
     ~Divide();
-    Divide(Node* l, Node* r);
+    Divide(smartNode l, smartNode r);
     double evaluate(double x) const override;
-    Node* derivative() const override;
-    Node* clone() const override;
-    Node* simplifier() const override;
+    smartNode derivative() const override;
+    smartNode clone() const override;
+    smartNode simplifier() const override;
     void print() const override;
 };
 
+inline smartNode operator+(smartNode l, smartNode r) {return std::make_shared<Sum>(l,r);}
+inline smartNode operator-(smartNode l, smartNode r) {return std::make_shared<Subtract>(l,r);}
+inline smartNode operator*(smartNode l, smartNode r) {return std::make_shared<Multiply>(l,r);}
+inline smartNode operator/(smartNode l, smartNode r) {return std::make_shared<Divide>(l,r);}
+    
 class SinNode : public Node{
 private:
-    Node* child;
+    smartNode child;
 public:
     ~SinNode();
-    SinNode(Node* child);
+    SinNode(smartNode child);
     double evaluate(double x) const override;
-    Node* derivative()const override;
-    Node* clone() const override;
+    smartNode derivative()const override;
+    smartNode clone() const override;
     void print() const override;
 };
 
 class CosNode : public Node{
 private:
-    Node* child;
+    smartNode child;
 public:
     ~CosNode();
-    CosNode(Node* child);
+    CosNode(smartNode child);
     double evaluate(double x) const override;
-    Node* derivative()const override;
-    Node* clone() const override;
+    smartNode derivative()const override;
+    smartNode clone() const override;
     void print() const override;
 };
 
 class TanNode : public Node{
 private:
-    Node* child;
+    smartNode child;
 public:
     ~TanNode();
-    TanNode(Node* child);
+    TanNode(smartNode child);
     double evaluate(double x) const override;
-    Node* derivative()const override;
-    Node* clone() const override;
+    smartNode derivative()const override;
+    smartNode clone() const override;
     void print() const override;
 };
 
 class CotNode : public Node{
 private:
-    Node* child;
+    smartNode child;
 public:
     ~CotNode();
-    CotNode(Node* child);
+    CotNode(smartNode child);
     double evaluate(double x) const override;
-    Node* derivative()const override;
-    Node* clone() const override;
+    smartNode derivative()const override;
+    smartNode clone() const override;
     void print() const override;
 };
 

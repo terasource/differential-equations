@@ -10,190 +10,178 @@
 //implement a simplifier in order to prevent the flaws during the derivation like 5x = (0 * x) + (5 * 1)
 //try to visualize the nodes in console.
 //-----------------------------------------------------------------------------------------------------------
-
 #include "node.hpp"
 #include <iostream>
-#pragma once
+
+using smartNode = std::shared_ptr<Node>;
 
 Node::~Node(){}
 
-Sum::~Sum(){delete left; delete right;}
+Sum::~Sum(){}
 
-Subtract::~Subtract(){delete left; delete right;}
+Subtract::~Subtract(){}
 
-Multiply::~Multiply(){delete left; delete right;}
+Multiply::~Multiply(){}
 
-Divide::~Divide() {delete left; delete right;}
+Divide::~Divide() {}
 
-SinNode::~SinNode() {delete child;}
+SinNode::~SinNode() {}
 
-CosNode::~CosNode() {delete child;}
+CosNode::~CosNode() {}
 
-TanNode::~TanNode() {delete child;}
+TanNode::~TanNode() {}
 
-CotNode::~CotNode() {delete child;}
+CotNode::~CotNode() {}
 
 Constant::Constant(double value) : value(value) {}
 
 double Constant::evaluate(double x) const { return value; }
-Node* Constant::derivative() const {return new Constant(0.0); }
-Node* Constant::clone() const {return new Constant(value);}
+smartNode Constant::derivative() const {return std::make_shared<Constant>(0.0); }
+smartNode Constant::clone() const {return std::make_shared<Constant>(value);}
 void Constant::print() const {std::cout << value;}
 
 double Variable::evaluate(double x) const {return x; }
-Node* Variable::derivative() const {return new Constant(1.0); }
-Node* Variable::clone() const {return new Variable(); }
+smartNode Variable::derivative() const {return std::make_shared<Constant>(1.0); }
+smartNode Variable::clone() const {return std::make_shared<Variable>(); }
 void Variable::print() const {std::cout << "x";};
 
-Sum::Sum(Node* l, Node* r) : left(l), right(r) {}
+Sum::Sum(smartNode l, smartNode r) : left(l), right(r) {}
 
 void Sum::print() const {std::cout << "("; left->print(); std::cout << " + "; right->print(); std::cout << ")"; }
 
 double Sum::evaluate(double x) const { return left->evaluate(x) + right->evaluate(x);}
-Node* Sum::derivative() const {return new Sum(left->derivative(), right->derivative());}
-Node* Sum::clone() const {return new Sum(left->clone(), right->clone());}
+smartNode Sum::derivative() const {return std::make_shared<Sum>(left->derivative(), right->derivative());}
+smartNode Sum::clone() const {return std::make_shared<Sum>(left->clone(), right->clone());}
 
-Node* Sum::simplifier() const {
+smartNode Sum::simplifier() const {
     //rules
     //A+B = C
     //A+0 = A
     //0+A = A
     
-    Node* sleft = left->simplifier();
-    Node* sright = right->simplifier();
+    smartNode sleft = left->simplifier();
+    smartNode sright = right->simplifier();
     
-    Constant* lconst = dynamic_cast<Constant*>(sleft);
-    Constant* rconst = dynamic_cast<Constant*>(sright);
-    
+    std::shared_ptr<Constant> lconst = std::dynamic_pointer_cast<Constant>(sleft);
+    std::shared_ptr<Constant> rconst = std::dynamic_pointer_cast<Constant>(sright);
+
     if(lconst && lconst->evaluate(0) == 0){
-        delete sleft;
         return sright;
     }
     if(rconst && rconst->evaluate(0) == 0){
-        delete sright;
         return sleft;
     }
     if(lconst && rconst){
         double val = sleft->evaluate(1) + sright->evaluate(1);
-        delete sleft; delete sright;
-        return new Constant(val);
+        return std::make_shared<Constant>(val);
     }
 
-    return new Sum(sleft, sright);
+    return std::make_shared<Sum>(sleft, sright);
 }
 
-Subtract::Subtract(Node* l, Node* r) : left(l), right(r) {}
+Subtract::Subtract(smartNode l, smartNode r) : left(l), right(r) {}
 
 double Subtract::evaluate(double x) const { return left->evaluate(x) - right->evaluate(x);}
 // (Q2) in the term of the math, I could just multiply the right root with -1 in the Summition derivate Node in order to
 // get the operation of the substraction derivative? could not i?
-Node* Subtract::derivative() const {return new Subtract(left->derivative(), right->derivative());}
-Node* Subtract::clone() const {return new Subtract(left->clone(), right->clone());}
+smartNode Subtract::derivative() const {return std::make_shared<Subtract>(left->derivative(), right->derivative());}
+smartNode Subtract::clone() const {return std::make_shared<Subtract>(left->clone(), right->clone());}
 
-Node* Subtract::simplifier() const {
+smartNode Subtract::simplifier() const {
     //rules
     //A-B = C
     //A-0 = A
     //0-A = -A
     
-    Node* sleft = left->simplifier();
-    Node* sright = right->simplifier();
+    smartNode sleft = left->simplifier();
+    smartNode sright = right->simplifier();
     
-    Constant* lconst = dynamic_cast<Constant*>(sleft);
-    Constant* rconst = dynamic_cast<Constant*>(sright);
+    std::shared_ptr<Constant> lconst = std::dynamic_pointer_cast<Constant>(sleft);
+    std::shared_ptr<Constant> rconst = std::dynamic_pointer_cast<Constant>(sright);
     
     if(lconst && lconst->evaluate(0) == 0){
-        delete sleft;
         if(rconst){
             double value =  -1 * sright->evaluate(0);
-            delete sright;
-            return new Constant(value);
+            return std::make_shared<Constant>(value);
         }else
-            return new Multiply(new Constant(-1.0), sright);
+            return std::make_shared<Multiply>(std::make_shared<Constant>(-1.0), sright);
     }
 
     if(rconst && rconst->evaluate(0) == 0){
-        delete sright;
         return sleft;
     }
     
     if(lconst && rconst){
         double val = sleft->evaluate(0) -sright->evaluate(0);
         
-        delete sleft; delete sright;
         
-        return new Constant(val);
+        return std::make_shared<Constant>(val);
+        
     }
-
-    return new Subtract(sleft, sright);
+    return  std::make_shared<Subtract>(sleft, sright);
 }
 
 void Subtract::print() const {std::cout << "("; left->print(); std::cout << " - "; right->print(); std::cout << ")";}
 
-Multiply::Multiply(Node *l, Node* r) : left(l), right(r) {}
+Multiply::Multiply(smartNode l, smartNode r) : left(l), right(r) {}
 
 double Multiply::evaluate(double x) const { return left->evaluate(x) * right->evaluate(x); }
 
-Node* Multiply::derivative() const {
-    return new Sum(
-                   new Multiply(left->derivative(), right->clone()),
-                   new Multiply(left->clone(), right->derivative())
+smartNode Multiply::derivative() const {
+    return std::make_shared<Sum>(
+                   std::make_shared<Multiply>(left->derivative(), right->clone()),
+                   std::make_shared<Multiply>(left->clone(), right->derivative())
                    );
 }
-Node* Multiply::clone() const {return new Multiply(left->clone(), right->clone());}
+smartNode Multiply::clone() const {return std::make_shared<Multiply>(left->clone(), right->clone());}
 
-Node* Multiply::simplifier() const {
+smartNode Multiply::simplifier() const {
 
-    Node* sleft = left->simplifier();
-    Node* sright = right->simplifier();
+    smartNode sleft = left->simplifier();
+    smartNode sright = right->simplifier();
     
-    Constant* lconst = dynamic_cast<Constant*>(sleft);
-    Constant* rconst = dynamic_cast<Constant*>(sright);
+    std::shared_ptr<Constant> lconst = std::dynamic_pointer_cast<Constant>(sleft);
+    std::shared_ptr<Constant> rconst = std::dynamic_pointer_cast<Constant>(sright);
     
     if(lconst && lconst->evaluate(0) == 0){
-        delete sleft; delete sright;
-        return new Constant(0.0);
+        return std::make_shared<Constant>(0.0);
     }
     
     if(rconst && rconst->evaluate(0) == 0){
-        delete sleft; delete sright;
-        return new Constant(0.0);
+        return std::make_shared<Constant>(0.0);
     }
     
     if(lconst && lconst->evaluate(0) == 1){
-        delete sleft;
         return sright;
     }
     if(rconst && rconst->evaluate(0) == 1){
-        delete sright;
         return sleft;
     }
     
     
     if(lconst != nullptr && rconst != nullptr){
         double val = lconst->evaluate(0) * rconst->evaluate(0);
-        delete sleft; delete sright;
-        return new Constant(val);
+        return std::make_shared<Constant>(val);
     }
         
     
-    return new Multiply(sleft, sright);
+    return std::make_shared<Multiply>(sleft, sright);
 }
 void Multiply::print() const {std::cout << "("; left->print(); std::cout << " * "; right->print(); std::cout << ")"; }
 
-Divide::Divide(Node* l, Node *r) : left(l), right(r) {}
+Divide::Divide(smartNode l, smartNode r) : left(l), right(r) {}
 
 double Divide::evaluate(double x) const { return left->evaluate(x) / right->evaluate(x); }
 
-Node* Divide::derivative() const {
-    return new Divide(new Subtract(new Multiply(left->derivative(), right->clone()),
-                                   new Multiply(left->clone(), right->derivative())
-                                   ),
-                      new Multiply(right->clone(), right->clone())
-                      );
+smartNode Divide::derivative() const {
+    return std::make_shared<Divide>(std::make_shared<Subtract>(std::make_shared<Multiply>(left->derivative(), right->clone()),
+        std::make_shared<Multiply>(left->clone(), right->derivative())
+        ),
+        std::make_shared<Multiply>(right->clone(), right->clone())
+        );
 }
-Node* Divide::clone() const {return new Divide(left->clone(), right->clone()); }
-Node* Divide::simplifier() const {
+smartNode Divide::clone() const {return std::make_shared<Divide>(left->clone(), right->clone()); }
+smartNode Divide::simplifier() const {
     //rules
     // A/1 = A;
     // 1/A = 1/A;
@@ -201,96 +189,91 @@ Node* Divide::simplifier() const {
     // 0/A = 0;
     // A/B = C;
     
-    Node* sleft = left->simplifier();
-    Node* sright = right->simplifier();
+    smartNode sleft = left->simplifier();
+    smartNode sright = right->simplifier();
     
-    Constant* lconst = dynamic_cast<Constant*>(sleft);
-    Constant* rconst = dynamic_cast<Constant*>(sright);
+    std::shared_ptr<Constant> lconst = std::dynamic_pointer_cast<Constant>(sleft);
+    std::shared_ptr<Constant> rconst = std::dynamic_pointer_cast<Constant>(sright);
     
     if(rconst && rconst->evaluate(0) == 1){
-        delete sright;
         return sleft;
     }
     if(lconst && lconst->evaluate(0) == 1){
-        return new Divide(sleft,sright);
+        return std::make_shared<Divide>(sleft,sright);
     }
     if(lconst && lconst->evaluate(0) == 0){
-        delete sleft; delete sright;
-        return new Constant(0);
+        return std::make_shared<Constant>(0);
     }
     if(rconst && rconst->evaluate(0) == 0){
-        delete sright;
-        delete sleft;
         throw std::runtime_error("Divison by zero! ");
     }
     if(lconst && rconst){
         double lval = sleft->evaluate(0);
         double rval = sright->evaluate(0);
         double val = lval / rval;
-        delete sleft; delete sright;
-        return new Constant(val);
+        return std::make_shared<Constant>(val);
     }
     
-    return new Divide(sleft, sright);
+    return std::make_shared<Divide>(sleft, sright);
 }
 
 void Divide::print() const {std::cout << "("; left->print(); std::cout << " / "; right->print(); std::cout << ")"; }
 
-SinNode::SinNode(Node* c) : child(c) {}
+SinNode::SinNode(smartNode c) : child(c) {}
 
 double SinNode::evaluate(double x) const {
     double val = child->evaluate(x);
     return function::Trigonometry::sin(val);
 }
-Node* SinNode::derivative() const {return new Multiply(child->derivative(), new CosNode(child->clone()));}
+smartNode SinNode::derivative() const {
+    return std::make_shared<Multiply>(child->derivative(), std::make_shared< CosNode>(child->clone()));
+}
 
-Node* SinNode::clone() const {return new SinNode(child->clone());}
+smartNode SinNode::clone() const {return std::make_shared<SinNode>(child->clone());}
 void SinNode::print() const {std::cout << "sin("; child->print(); std::cout << ")";}
 
-CosNode::CosNode(Node* c) : child(c) {}
+CosNode::CosNode(smartNode c) : child(c) {}
 
 double CosNode::evaluate(double x) const {
     double val = child->evaluate(x);
     return function::Trigonometry::cos(val);
 }
 
-Node* CosNode::derivative() const { return new Multiply(child->derivative(), new Multiply(new Constant(-1.0), new SinNode(child->clone())));}
+smartNode CosNode::derivative() const { return std::make_shared<Multiply>(child->derivative(), std::make_shared<Multiply>(std::make_shared<Constant>(-1.0), std::make_shared<SinNode>(child->clone())));}
 
-Node* CosNode::clone() const {return new CosNode(child->clone());}
+smartNode CosNode::clone() const {return std::make_shared<CosNode>(child->clone());}
 
 void CosNode::print() const {std::cout << "cos("; child->print(); std::cout << ")";}
 
-TanNode::TanNode(Node* c) : child(c) {}
+TanNode::TanNode(smartNode c) : child(c) {}
 
 double TanNode::evaluate(double x) const {
     double val = child->evaluate(x);
     return function::Trigonometry::tan(val);
 }
-Node* TanNode::derivative() const {
-    Divide* nD = new Divide(new SinNode(child->clone()), new CosNode(child->clone()));
-    Node* result = nD->derivative();
-    delete nD;
+smartNode TanNode::derivative() const {
+    std::shared_ptr<Divide> nD = std::make_shared<Divide>(std::make_shared<SinNode>(child->clone()), std::make_shared<CosNode>(child->clone()));
+    smartNode result = nD->derivative();
     return result;
 }
 
-Node* TanNode::clone() const {return new TanNode(child->clone());}
+smartNode TanNode::clone() const {return std::make_shared<TanNode>(child->clone());}
 void TanNode::print() const {std::cout << "tan("; child->print(); std::cout << ")";}
 
-CotNode::CotNode(Node* c) : child(c){}
+CotNode::CotNode(smartNode c) : child(c){}
 
 double CotNode::evaluate(double x) const {
     double val = child->evaluate(x);
     return function::Trigonometry::cot(val);
 }
 
-Node* CotNode::derivative() const {
-    Divide* nD = new Divide(new CosNode(child->clone()), new SinNode(child->clone()));
-    Node* result = nD->derivative();
-    delete nD;
+smartNode CotNode::derivative() const {
+    std::shared_ptr<Divide> nD = std::make_shared<Divide>(std::make_shared<CosNode>(child->clone()), std::make_shared<SinNode>(child->clone()));
+    smartNode result = nD->derivative();
     return result;
 }
 
-Node* CotNode::clone() const {return new CotNode(child->clone());}
+smartNode CotNode::clone() const {return std::make_shared<CotNode>(child->clone());}
 
 void CotNode::print() const {std::cout << "cot("; child->print(); std::cout << ")";}
 

@@ -9,51 +9,8 @@
 #include <iostream>
 #include <map>
 #include <cmath>
+#include "mathUtil.hpp"
 
-double factorial(int x){
-    double result = 1;
-    while(x > 0)
-        result *= x--;
-    
-    return result;
-}
-
-function::function(){
-    this->coefficients = {{0.0,0}};
-}
-
-function::function(std::map<double, int> coefficients){
-    this->coefficients = coefficients;
-}
-function::function(std::function<double(double)> evaluator){
-    this->evaluator = evaluator;
-}
-
-function::Derivative::Derivative(function &f) : parent(f){}
-
-double function::f(double x){
-    this->value = 0;
-    
-        for(auto c : coefficients)
-            value += c.second * pow(x, c.first);
-        
-        return value;
-    
-}
-
-double function::operator()(double x){
-    if(evaluator)
-    return this->evaluator(x);
-    
-        return function::f(x);
-}
-
-
-double function::Derivative::operator()(double x){
-    const double h = 1e-7;
-    
-    return (parent(x+h) - parent(x-h)) / (2.0 * h);
-}
 
 double function::Trigonometry::sin(double x){
     const int n = 16;
