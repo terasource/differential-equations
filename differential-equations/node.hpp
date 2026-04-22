@@ -96,11 +96,21 @@ class Divide : public Node{
     void print() const override;
 };
 
-inline smartNode operator+(smartNode l, smartNode r) {return std::make_shared<Sum>(l,r);}
-inline smartNode operator-(smartNode l, smartNode r) {return std::make_shared<Subtract>(l,r);}
-inline smartNode operator*(smartNode l, smartNode r) {return std::make_shared<Multiply>(l,r);}
-inline smartNode operator/(smartNode l, smartNode r) {return std::make_shared<Divide>(l,r);}
-    
+class PowerNode : public Node{
+    private:
+    smartNode base;
+    smartNode exponent;
+public:
+    ~PowerNode();
+    PowerNode(smartNode base, smartNode exponent);
+    double evaluate(double x) const override;
+    smartNode derivative() const override;
+    smartNode clone() const override;
+    smartNode simplifier() const override;
+    void print() const override;
+};
+
+
 class SinNode : public Node{
 private:
     smartNode child;
@@ -149,3 +159,15 @@ public:
     void print() const override;
 };
 
+inline smartNode operator+(smartNode l, smartNode r) {return std::make_shared<Sum>(l,r);}
+inline smartNode operator-(smartNode l, smartNode r) {return std::make_shared<Subtract>(l,r);}
+inline smartNode operator*(smartNode l, smartNode r) {return std::make_shared<Multiply>(l,r);}
+inline smartNode operator/(smartNode l, smartNode r) {return std::make_shared<Divide>(l,r);}
+inline smartNode operator^(smartNode b, smartNode exp) {return std::make_shared<PowerNode>(b,exp);}
+
+inline smartNode variable(){return std::make_shared<Variable>();}
+inline smartNode constant(double value){return std::make_shared<Constant>(value);}
+inline smartNode sin(smartNode child){return std::make_shared<SinNode>(child);};
+inline smartNode cos(smartNode child){return std::make_shared<CosNode>(child);};
+inline smartNode tan(smartNode child){return std::make_shared<TanNode>(child);};
+inline smartNode cot(smartNode child){return std::make_shared<CotNode>(child);};

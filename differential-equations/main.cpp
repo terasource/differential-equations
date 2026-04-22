@@ -12,11 +12,9 @@ using smartNode = std::shared_ptr<Node>;
 #define degree M_PI / 180
 #
 // TO-DO
+// powerNode added. (done)
 
-//so we need to modify function.hpp file as an helper class not a class we create a object from in order to prevent the identify conflicts (done for now, and will be updated later, the function class itself now represents the vary kind of functions like trigonometric(for now) and will represent the other type of functions later like logaritmic, limit, exponential etc.) (done)
-
-// refactor raw pointers to shared_ptr for better memory management on nodes (done)
-// implement a pow function (done)
+// implement helper factory functions in order to get rid of the make_shred notation while creating function.
 // for double powers, i include math.h to use exp and log functions but later implement them with using taylor series or different way.
 // implement a symbolic and numerical integral methods
 
@@ -35,10 +33,18 @@ int main(int argc, const char * argv[]) {
     smartNode dfn = fn->derivative();
     smartNode dfns = dfn->simplifier();
     
+    /*
     std::cout << "Raw Function = "; fn->print(); std::cout << std::endl;
     std::cout << "Derivative of the function = "; dfn->print(); std::cout << std::endl;
     std::cout << "Simplified version of the Derivated function = "; dfns->print(); std::cout << std::endl;
     std::cout << fn->evaluate(2) << std::endl;
+    */
+    
+    smartNode fnexp = variable() ^ constant(2);
+    fnexp->print();
+    std::cout << std::endl;
+    fnexp->derivative()->print();
+    std::cout << std::endl;
     
     return 0;
 }

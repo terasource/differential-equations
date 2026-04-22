@@ -12,6 +12,7 @@
 //-----------------------------------------------------------------------------------------------------------
 #include "node.hpp"
 #include <iostream>
+#include "mathUtil.hpp"
 
 using smartNode = std::shared_ptr<Node>;
 
@@ -33,6 +34,8 @@ TanNode::~TanNode() {}
 
 CotNode::~CotNode() {}
 
+PowerNode::~PowerNode() {}
+
 Constant::Constant(double value) : value(value) {}
 
 double Constant::evaluate(double x) const { return value; }
@@ -50,7 +53,12 @@ Sum::Sum(smartNode l, smartNode r) : left(l), right(r) {}
 void Sum::print() const {std::cout << "("; left->print(); std::cout << " + "; right->print(); std::cout << ")"; }
 
 double Sum::evaluate(double x) const { return left->evaluate(x) + right->evaluate(x);}
-smartNode Sum::derivative() const {return std::make_shared<Sum>(left->derivative(), right->derivative());}
+
+smartNode Sum::derivative() const {
+    smartNode result = std::make_shared<Sum>(left->derivative(), right->derivative());
+    return result->simplifier();
+}
+
 smartNode Sum::clone() const {return std::make_shared<Sum>(left->clone(), right->clone());}
 
 smartNode Sum::simplifier() const {
@@ -84,7 +92,10 @@ Subtract::Subtract(smartNode l, smartNode r) : left(l), right(r) {}
 double Subtract::evaluate(double x) const { return left->evaluate(x) - right->evaluate(x);}
 // (Q2) in the term of the math, I could just multiply the right root with -1 in the Summition derivate Node in order to
 // get the operation of the substraction derivative? could not i?
-smartNode Subtract::derivative() const {return std::make_shared<Subtract>(left->derivative(), right->derivative());}
+smartNode Subtract::derivative() const {
+    smartNode result = std::make_shared<Subtract>(left->derivative(), right->derivative());
+    return result->simplifier();
+}
 smartNode Subtract::clone() const {return std::make_shared<Subtract>(left->clone(), right->clone());}
 
 smartNode Subtract::simplifier() const {
@@ -128,10 +139,12 @@ Multiply::Multiply(smartNode l, smartNode r) : left(l), right(r) {}
 double Multiply::evaluate(double x) const { return left->evaluate(x) * right->evaluate(x); }
 
 smartNode Multiply::derivative() const {
-    return std::make_shared<Sum>(
+    smartNode result = std::make_shared<Sum>(
                    std::make_shared<Multiply>(left->derivative(), right->clone()),
                    std::make_shared<Multiply>(left->clone(), right->derivative())
                    );
+    
+    return result->simplifier();
 }
 smartNode Multiply::clone() const {return std::make_shared<Multiply>(left->clone(), right->clone());}
 
@@ -174,11 +187,12 @@ Divide::Divide(smartNode l, smartNode r) : left(l), right(r) {}
 double Divide::evaluate(double x) const { return left->evaluate(x) / right->evaluate(x); }
 
 smartNode Divide::derivative() const {
-    return std::make_shared<Divide>(std::make_shared<Subtract>(std::make_shared<Multiply>(left->derivative(), right->clone()),
+    smartNode result = std::make_shared<Divide>(std::make_shared<Subtract>(std::make_shared<Multiply>(left->derivative(), right->clone()),
         std::make_shared<Multiply>(left->clone(), right->derivative())
         ),
         std::make_shared<Multiply>(right->clone(), right->clone())
         );
+    return result->simplifier();
 }
 smartNode Divide::clone() const {return std::make_shared<Divide>(left->clone(), right->clone()); }
 smartNode Divide::simplifier() const {
@@ -277,3 +291,58 @@ smartNode CotNode::clone() const {return std::make_shared<CotNode>(child->clone(
 
 void CotNode::print() const {std::cout << "cot("; child->print(); std::cout << ")";}
 
+PowerNode::PowerNode(smartNode base, smartNode exponent) : base(base), exponent(exponent) {}
+
+double PowerNode::evaluate(double x) const {
+    return MathUtil::pow(base->evaluate(0), exponent->evaluate(0));
+}
+
+smartNode PowerNode::clone() const {
+    return std::make_shared<PowerNode>(base->clone(), exponent->clone());
+}
+
+smartNode PowerNode::derivative() const {
+    std::shared_ptr<Constant> exponent_constant = std::dynamic_pointer_cast<Constant>(exponent);
+    std::shared_ptr<Variable> exponent_variable = std::dynamic_pointer_cast<Variable>(exponent);
+    std::shared_ptr<Constant> base_constant = std::dynamic_pointer_cast<Constant>(base);
+    std::shared_ptr<Variable> base_variable = std::dynamic_pointer_cast<Variable>(base);
+    
+    if(base_constant && exponent_constant)
+        return std::make_shared<Constant>(0);
+
+    if(base_constant && exponent_variable){
+        smartNode result = std::make_shared<Constant>(log(base->evaluate(0))) * this->clone() * exponent->derivative();
+        return result->simplifier();
+    }
+    
+    if(base_variable && exponent_constant){
+        smartNode result = std::make_shared<Constant>(exponent->evaluate(0)) * std::make_shared<PowerNode>(base, std::make_shared<Constant>(exponent->evaluate(0) - 1)) * base->derivative();
+        
+        return result->simplifier();
+    }
+    
+    if(base_variable && exponent_variable)
+        throw std::runtime_error("x^x derivative not implemented");
+
+    return std::make_shared<Multiply>(base, exponent);
+}
+
+smartNode PowerNode::simplifier() const{
+    std::shared_ptr<Constant> exponent_constant = std::dynamic_pointer_cast<Constant>(exponent);
+    std::shared_ptr<Constant> base_constant = std::dynamic_pointer_cast<Constant>(base);
+    
+    if(base_constant && base_constant->evaluate(0) == 1)
+        return std::make_shared<Constant>(1);
+    if(base_constant && base_constant->evaluate(0) == 0)
+        return std::make_shared<Constant>(0);
+    if(exponent_constant && exponent_constant->evaluate(0) == 1)
+        return base;
+    if(exponent_constant && exponent_constant->evaluate(0) == 0)
+        return std::make_shared<Constant>(1);
+    
+    return this->clone();
+}
+
+void PowerNode::print() const {
+    base->print(); std::cout << "^"; exponent->print();
+}
