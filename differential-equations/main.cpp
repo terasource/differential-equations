@@ -45,6 +45,6 @@ int main(int argc, const char * argv[]) {
     std::cout << std::endl;
     fnexp->derivative()->print();
     std::cout << std::endl;
-    
+    std::cout << fnexp->evaluate(2) << std::endl;
     return 0;
 }

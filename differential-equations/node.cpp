@@ -294,7 +294,7 @@ void CotNode::print() const {std::cout << "cot("; child->print(); std::cout << "
 PowerNode::PowerNode(smartNode base, smartNode exponent) : base(base), exponent(exponent) {}
 
 double PowerNode::evaluate(double x) const {
-    return MathUtil::pow(base->evaluate(0), exponent->evaluate(0));
+    return MathUtil::pow(base->evaluate(x), exponent->evaluate(x));
 }
 
 smartNode PowerNode::clone() const {
